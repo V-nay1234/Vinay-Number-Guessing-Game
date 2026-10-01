@@ -1262,25 +1262,44 @@ html, body {
 .target-spec { font-size: 0.74rem; font-weight: 600; color: var(--text-primary); }
 
 .turn-indicator-badge {
-  padding: 2px 8px;
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   font-family: var(--font-display);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 .turn-indicator-badge.turn-active {
-  background: var(--color-green-bg);
-  border: 1px solid var(--color-green-border);
-  color: var(--color-green);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.45));
+  border: 1.5px solid #10b981;
+  color: #a7f3d0;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+  animation: pulse-turn 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse-turn {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.85);
+  }
 }
 
 .turn-indicator-badge.turn-waiting {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1.5px solid rgba(245, 158, 11, 0.5);
+  color: #fde68a;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
 }
 
 /* Middle Split: Chat on Left, Guess History on Right */
