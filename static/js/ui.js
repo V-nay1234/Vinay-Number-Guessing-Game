@@ -280,54 +280,59 @@ class UIRenderer {
       return;
     }
 
-    // 4. DUEL IN PROGRESS: TURNS
-    if (status === "PLAYER_1_TURN" || status === "PLAYER_2_TURN" || status === "READY") {
-      document.getElementById("stage-duel")?.classList.remove("hidden");
-      banner?.classList.remove("hidden"); // Active turn banner shown for guessing turns
+      // 4. DUEL IN PROGRESS: TURNS
+      if (status === "PLAYER_1_TURN" || status === "PLAYER_2_TURN" || status === "READY") {
+        document.getElementById("stage-duel")?.classList.remove("hidden");
+        if (banner) banner.classList.remove("hidden");
 
-      const isMyTurn = state.is_my_turn;
-      const targetLen = state.required_guess_length || 4;
+        const isMyTurn = state.is_my_turn;
+        const targetLen = state.required_guess_length || 4;
 
-      document.getElementById("target-length-count").textContent = targetLen;
-      const turnBadge = document.getElementById("turn-indicator-badge");
+        const targetCountEl = document.getElementById("target-length-count");
+        if (targetCountEl) targetCountEl.textContent = targetLen;
+        const turnBadge = document.getElementById("turn-indicator-badge");
 
-      if (isMyTurn) {
-        banner.className = "turn-banner banner-your-turn";
-        bannerIcon.textContent = "🎯";
-        bannerTitle.textContent = "YOUR TURN TO GUESS";
-        bannerSub.textContent = `Submit a ${targetLen}-digit guess to test opponent's secret number!`;
-
-        if (turnBadge) {
-          turnBadge.className = "turn-indicator-badge turn-active";
-          turnBadge.textContent = "YOUR TURN";
+        if (isMyTurn) {
+          if (banner) {
+            banner.className = "turn-banner banner-your-turn";
+            if (bannerIcon) bannerIcon.textContent = "🎯";
+            if (bannerTitle) bannerTitle.textContent = "YOUR TURN TO GUESS";
+            if (bannerSub) bannerSub.textContent = `Submit a ${targetLen}-digit guess to test opponent's secret number!`;
+          }
+          if (turnBadge) {
+            turnBadge.className = "turn-indicator-badge turn-active";
+            turnBadge.textContent = "👉 YOUR TURN";
+          }
+        } else {
+          const oppName = opponent ? opponent.name : "Opponent";
+          if (banner) {
+            banner.className = "turn-banner banner-opponent-turn";
+            if (bannerIcon) bannerIcon.textContent = "⏳";
+            if (bannerTitle) bannerTitle.textContent = `Waiting for ${oppName}...`;
+            if (bannerSub) bannerSub.textContent = `${oppName} is currently analyzing and submitting a guess.`;
+          }
+          if (turnBadge) {
+            turnBadge.className = "turn-indicator-badge turn-waiting";
+            turnBadge.textContent = `⏳ ${oppName.toUpperCase()}'S TURN`;
+          }
         }
-      } else {
-        const oppName = opponent ? opponent.name : "Opponent";
-        banner.className = "turn-banner banner-opponent-turn";
-        bannerIcon.textContent = "⏳";
-        bannerTitle.textContent = `Waiting for ${oppName}...`;
-        bannerSub.textContent = `${oppName} is currently analyzing and submitting a guess.`;
-
-        if (turnBadge) {
-          turnBadge.className = "turn-indicator-badge turn-waiting";
-          turnBadge.textContent = "OPPONENT'S TURN";
-        }
+        return;
       }
-      return;
-    }
 
-    // 5. GAME WON
-    if (status === "GAME_WON") {
-      document.getElementById("stage-victory")?.classList.remove("hidden");
-      banner.className = "turn-banner banner-your-turn";
-      bannerIcon.textContent = "🏆";
+      // 5. GAME WON
+      if (status === "GAME_WON") {
+        document.getElementById("stage-victory")?.classList.remove("hidden");
+        if (banner) {
+          banner.className = "turn-banner banner-your-turn";
+          if (bannerIcon) bannerIcon.textContent = "🏆";
+        }
 
-      const winnerId = state.winner;
-      const winnerName = (winnerId === me?.player_id) ? me.name : (opponent ? opponent.name : "Winner");
-      const isWinner = (winnerId === myPlayerId);
+        const winnerId = state.winner;
+        const winnerName = (winnerId === me?.player_id) ? me.name : (opponent ? opponent.name : "Winner");
+        const isWinner = (winnerId === myPlayerId);
 
-      bannerTitle.textContent = `${winnerName.toUpperCase()} WON THE MATCH!`;
-      bannerSub.textContent = isWinner ? "Sensational tactical victory! You cracked their number!" : "Good effort! Rematch to reclaim the title.";
+        if (bannerTitle) bannerTitle.textContent = `${winnerName.toUpperCase()} WON THE MATCH!`;
+        if (bannerSub) bannerSub.textContent = isWinner ? "Sensational tactical victory! You cracked their number!" : "Good effort! Rematch to reclaim the title.";
 
       document.getElementById("victory-title").textContent = `${winnerName.toUpperCase()} WON!`;
       document.getElementById("victory-subtitle").textContent = isWinner
@@ -346,24 +351,30 @@ class UIRenderer {
     const oppCount = document.getElementById("opp-guess-count");
     if (!list) return;
 
-    const myGuesses = state.my_guesses || [];
-    const oppGuesses = state.opponent_guesses || [];
+    const myGuesses = (state.my_guesses && state.my_guesses.length) 
+      ? state.my_guesses 
+      : (state.guesses ? state.guesses.filter(g => g.player_id === myPlayerId) : []);
+    const oppGuesses = (state.opponent_guesses && state.opponent_guesses.length) 
+      ? state.opponent_guesses 
+      : (state.guesses ? state.guesses.filter(g => g.player_id !== myPlayerId) : []);
 
     if (myCount) myCount.textContent = myGuesses.length;
     if (oppCount) oppCount.textContent = oppGuesses.length;
 
     const activeList = this.activeHistoryTab === "my" ? myGuesses : oppGuesses;
 
-    if (activeList.length === 0) {
-      list.innerHTML = `<div class="empty-history-text">No guesses in this tab yet.</div>`;
+    if (!activeList || activeList.length === 0) {
+      const tabName = this.activeHistoryTab === "my" ? "You haven't" : "Opponent hasn't";
+      list.innerHTML = `<div class="empty-history-text">${tabName} submitted any guesses yet.</div>`;
       return;
     }
 
     list.innerHTML = activeList
       .slice()
       .map(g => {
-        const guessStr = String(g.guess_value || "");
-        const tilesHtml = g.result
+        const guessStr = String(g.guess_value || g.guess || "");
+        const resList = g.result || g.feedback || [];
+        const tilesHtml = resList
           .map((res, idx) => {
             const digitChar = guessStr[idx] !== undefined ? escapeHtml(guessStr[idx]) : "?";
             const isGreen = res === "GREEN";
@@ -394,7 +405,7 @@ class UIRenderer {
         return `
           <div class="guess-item">
             <div class="guess-item-left">
-              <span class="guess-num">#${g.turn_number}</span>
+              <span class="guess-num">#${g.turn_number || 1}</span>
             </div>
             <div class="guess-tiles-row">
               ${tilesHtml}
