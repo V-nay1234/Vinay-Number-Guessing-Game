@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vinay Number Guessing Activity — 2-Player Tactical Game</title>
+  <meta name="description" content="Vinay Number Guessing Activity — 2-player real-time online number guessing game with live WebSockets, chat, emojis, and video." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=21" />
+  <link rel="stylesheet" href="css/responsive.css?v=21" />
+</head>
+<body>
+  <!-- Ambient cyber background grid -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow-orb bg-glow-orb-1"></div>
+  <div class="bg-glow-orb bg-glow-orb-2"></div>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- WEBRTC PERMISSION PROMPT MODAL -->
+  <div id="media-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-icon" id="modal-icon">📹</div>
+      <h3 id="modal-title" class="modal-title">Incoming Call Request</h3>
+      <p id="modal-desc" class="modal-desc">Opponent wants to start video/audio communication.</p>
+      <div class="modal-actions">
+        <button id="modal-deny-btn" class="btn btn-secondary">Deny</button>
+        <button id="modal-allow-btn" class="btn btn-primary">Allow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN VIEWPORT CONTAINER WITH PHONE ASPECT RATIO -->
+  <div class="viewport-outer-container">
+    <!-- Viewport Control Bar -->
+    <div class="viewport-control-bar">
+      <div class="viewport-title">
+        <span>🌸 Soft French Lavender</span>
+        <span class="aspect-ratio-pill">9 : 16</span>
+      </div>
+      <button id="toggle-view-mode-btn" class="btn btn-sm btn-outline" style="font-size:0.75rem; padding: 4px 10px;" onclick="document.getElementById('phone-frame-device').classList.toggle('full-width-mode'); this.innerText = document.getElementById('phone-frame-device').classList.contains('full-width-mode') ? '📱 Phone View' : '🖥️ Full View';">
+        🖥️ Full View
+      </button>
+    </div>
+
+    <!-- Phone Device Mockup Frame -->
+    <div class="phone-frame" id="phone-frame-device">
+      <!-- Phone Notch Bar -->
+      <div class="phone-notch-bar">
+        <div class="phone-speaker"></div>
+        <div class="phone-camera"></div>
+      </div>
+
+      <!-- Phone Status Bar -->
+      <div class="phone-status-bar">
+        <span class="status-time" id="status-time-clock">09:41</span>
+        <div class="status-right">
+          <span>5G</span>
+          <span>📶</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <!-- Phone Screen Scrollable Area -->
+      <div class="phone-screen-body">
+  <!-- LOBBY / JOIN OVERLAY (Shown when not in a game) -->
+  <div id="lobby-screen" class="lobby-screen">
+    <div class="lobby-card">
+      <div class="lobby-badge" id="lobby-badge-text">ONLINE 2-PLAYER MATCH</div>
+      <h1 class="lobby-title">VINAY <span class="text-accent">NUMBER GUESSING ACTIVITY</span></h1>
+      <p class="lobby-subtitle" id="lobby-sub-text">Privately choose a secret number. Outsmart and decode your opponent's number before they crack yours.</p>
+
+      <div class="lobby-form-group">
+        <label for="player-name-input" class="form-label">YOUR CODENAME</label>
+        <input type="text" id="player-name-input" class="form-input" placeholder="e.g. Vinay" maxlength="20" autofocus />
+      </div>
+
+      <!-- DEFAULT ACTIONS: CREATE ROOM OR MANUAL JOIN (Shown when opening base link) -->
+      <div class="lobby-actions-grid" id="lobby-default-actions">
+        <!-- CREATE ROOM -->
+        <div class="lobby-action-box">
+          <div class="action-box-icon">⚡</div>
+          <h3>Host New Duel</h3>
+          <p>Get a unique room code and shareable invite link for your friend.</p>
+          <button id="create-game-btn" class="btn btn-primary btn-block">CREATE GAME</button>
+        </div>
+
+        <!-- JOIN ROOM -->
+        <div class="lobby-action-box">
+          <div class="action-box-icon">🔑</div>
+          <h3>Join Existing Duel</h3>
+          <p>Enter a 6-character room code sent by your friend.</p>
+          <div class="join-code-row">
+            <input type="text" id="join-code-input" class="form-input code-input" placeholder="CODE" maxlength="6" />
+            <button id="join-game-btn" class="btn btn-accent">JOIN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVITE ACTIONS: DIRECT JOIN ONLY (Shown when opening already created room link) -->
+      <div class="lobby-invite-direct-box hidden" id="lobby-invite-direct">
+        <span class="invite-badge">ROOM INVITATION</span>
+        <div class="action-box-icon">⚔️</div>
+        <h3>You're Invited to Duel!</h3>
+        <p>Your friend is waiting for you in Room:</p>
+        <div class="invite-code-pill" id="invite-direct-code-display">------</div>
+        <button id="direct-join-btn" class="btn btn-primary btn-lg btn-block">JOIN DUEL NOW</button>
+        <button type="button" id="switch-to-create-btn" class="switch-to-create-link">
+          Want to host a new duel instead?
+        </button>
+      </div>
+
+      <!-- ACTIVE SESSION RESTORE NOTICE -->
+      <div id="resume-banner" class="resume-banner hidden">
+        <span>Previous match detected: Room <strong id="resume-code-text"></strong></span>
+        <button id="resume-btn" class="btn btn-sm btn-primary">REJOIN MATCH</button>
+        <button id="discard-session-btn" class="btn btn-sm btn-ghost">Dismiss</button>
+      </div>
+
+      <!-- CREATOR CREDITS -->
+      <div class="creator-badge-lobby">
+        <span class="creator-sparkle">✨</span>
+        <span>Developed by <strong class="creator-name">Vinay</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GAME VIEW -->
+  <div id="game-container" class="game-container hidden">
+    <!-- TOP HEADER -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="header-back-btn" class="header-back-btn" title="Go back one step" aria-label="Go back one step">
+          <span>←</span>
+        </button>
+        <div class="room-code-tag" id="header-room-pill" title="Click to copy room code & invite link">
+          <span class="code-label" id="header-code-label">ROOM:</span>
+          <strong id="display-game-code" class="code-value">------</strong>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Share Room Link Button -->
+        <button id="header-share-btn" class="header-share-btn" title="Share Room Link" aria-label="Share Room Link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+        </button>
+
+        <!-- Match Rules / Instructions Button -->
+        <button id="header-rules-btn" class="header-rules-btn" title="View Match Rules" aria-label="Match Rules">!</button>
+
+        <!-- Compact Voice & Video Call Icons -->
+        <div class="header-call-actions">
+          <button id="header-audio-btn" class="header-call-btn" title="Start Voice Call" aria-label="Voice Call">🎙️</button>
+          <button id="header-video-btn" class="header-call-btn" title="Start Video Call" aria-label="Video Call">📹</button>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connection-badge" class="connection-badge status-connected" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="connection-text" class="status-text">Connected</span>
+        </div>
+
+        <button id="leave-game-btn" class="btn btn-sm btn-ghost" title="Leave Game Room">Leave</button>
+      </div>
+    </header>
+
+
+
+    <!-- 3-COLUMN MAIN LAYOUT -->
+    <main class="game-layout" id="main-layout">
+      <!-- LEFT COLUMN: PLAYERS & MEDIA CONTROLS -->
+      <aside class="layout-column column-left" id="column-left">
+        <!-- PLAYERS SECTION CARD -->
+        <div class="collapsible-card" id="sec-players">
+          <div class="card-collapse-header" data-collapse="sec-players" role="button" tabindex="0">
+            <div class="header-title-wrap">
+              <span class="card-icon">👥</span>
+              <span class="card-title">DUEL PLAYERS</span>
+              <span class="section-state-badge" id="players-status-count">2 In Room</span>
+            </div>
+            <button class="section-toggle-btn" aria-label="Toggle Players Section">
+              <span class="chevron-arrow">▼</span>
+            </button>
+          </div>
+
+          <div class="collapsible-content">
+            <div class="card-inner-body">
+              <!-- PLAYER 1 CARD -->
+              <div id="p1-card" class="player-card">
+                <div class="player-card-header">
+                  <div class="player-avatar p1-avatar">P1</div>
+                  <div class="player-meta">
+                    <div class="player-role">PLAYER 1 (HOST)</div>
+                    <div id="p1-name" class="player-name">Waiting...</div>
+                  </div>
+                  <div id="p1-status-pill" class="status-pill">Offline</div>
+                </div>
+                <div class="player-card-body">
+                  <div class="player-stat-row">
+                    <span class="stat-title">Secret Length:</span>
+                    <span id="p1-length-badge" class="stat-badge">—</span>
+                  </div>
+                  <div class="player-stat-row">
+                    <span class="stat-title">Secret Status:</span>
+                    <span id="p1-ready-badge" class="stat-badge">Pending</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VS BADGE -->
+              <div class="vs-divider">
+                <div class="vs-line"></div>
+                <span class="vs-tag">VS</span>
+                <div class="vs-line"></div>
+              </div>
+
+              <!-- PLAYER 2 CARD -->
+              <div id="p2-card" class="player-card">
+                <div class="player-card-header">
+                  <div class="player-avatar p2-avatar">P2</div>
+                  <div class="player-meta">
+                    <div class="player-role">PLAYER 2 (CHALLENGER)</div>
+                    <div id="p2-name" class="player-name">Waiting for Player 2...</div>
+                  </div>
+                  <div id="p2-status-pill" class="status-pill">Offline</div>
+                </div>
+                <div class="player-card-body">
+                  <div class="player-stat-row">
+                    <span class="stat-title">Secret Length:</span>
+                    <span id="p2-length-badge" class="stat-badge">—</span>
+                  </div>
+                  <div class="player-stat-row">
+                    <span class="stat-title">Secret Status:</span>
+                    <span id="p2-ready-badge" class="stat-badge">Pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- YOUR SECRET NUMBER HUD CARD -->
+        <div class="collapsible-card" id="sec-hud">
+          <div class="card-collapse-header" data-collapse="sec-hud" role="button" tabindex="0">
+            <div class="header-title-wrap">
+              <span class="card-icon">🔒</span>
+              <span class="card-title">YOUR PRIVATE NUMBER</span>
+              <span class="section-state-badge" id="hud-secret-status">Shielded</span>
+            </div>
+            <button class="section-toggle-btn" aria-label="Toggle Secret HUD Section">
+              <span class="chevron-arrow">▼</span>
+            </button>
+          </div>
+
+          <div class="collapsible-content">
+            <div class="card-inner-body">
+              <div class="hud-body">
+                <div id="my-secret-display" class="my-secret-digits" aria-label="Your secret number">
+                  <span class="digit-placeholder">—</span>
+                </div>
+                <p class="hud-note">Shielded from opponent. Only you and server can see this.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPTIONAL WEBRTC AUDIO/VIDEO DOCK -->
+        <div class="collapsible-card" id="sec-call">
+          <div class="card-collapse-header" data-collapse="sec-call" role="button" tabindex="0">
+            <div class="header-title-wrap">
+              <span class="card-icon">📹</span>
+              <span class="card-title">LIVE CALL (OPTIONAL)</span>
+              <span id="call-status-badge" class="call-badge">Inactive</span>
+            </div>
+            <button class="section-toggle-btn" aria-label="Toggle Call Section">
+              <span class="chevron-arrow">▼</span>
+            </button>
+          </div>
+
+          <div class="collapsible-content">
+            <div class="card-inner-body">
+              <p class="dock-hint">Connect peer-to-peer audio or video with your opponent during the duel.</p>
+
+              <div class="media-controls-row compact-call-row">
+                <button id="webrtc-audio-btn" class="call-action-icon-btn" title="Start Voice Call" aria-label="Start Voice Call">
+                  <span class="call-symbol">🎙️</span>
+                  <span class="call-name">Voice Call</span>
+                </button>
+                <button id="webrtc-call-btn" class="call-action-icon-btn" title="Start Video Call" aria-label="Start Video Call">
+                  <span class="call-symbol">📹</span>
+                  <span class="call-name">Video Call</span>
+                </button>
+              </div>
+
+              <!-- ACTIVE CALL CONTROLS -->
+              <div id="active-call-controls" class="active-call-controls hidden">
+                <button id="toggle-mic-btn" class="btn-icon media-toggle-btn active" title="Mute/Unmute Mic">🎙️</button>
+                <button id="toggle-cam-btn" class="btn-icon media-toggle-btn active" title="Enable/Disable Camera">📹</button>
+                <button id="hangup-call-btn" class="btn-icon media-hangup-btn" title="End Call">📞</button>
+              </div>
+
+              <!-- VIDEO STREAM PANELS -->
+              <div id="video-stream-container" class="video-stream-container hidden">
+                <div class="video-wrapper local-video-wrap">
+                  <video id="local-video" autoplay playsinline muted></video>
+                  <span class="video-label">You</span>
+                </div>
+                <div class="video-wrapper remote-video-wrap">
+                  <video id="remote-video" autoplay playsinline></video>
+                  <span class="video-label" id="remote-video-label">Opponent</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER COLUMN: GAME ARENA & GUESS INTERFACE -->
+      <section class="layout-column column-center" id="sec-arena">
+        <!-- ARENA CARD: DYNAMIC WORKFLOW STAGES -->
+        <div class="arena-card">
+          <!-- STAGE 1: WAITING FOR OPPONENT (Hidden by default; merged into length selection) -->
+          <div id="stage-waiting" class="stage-section hidden">
+            <div class="empty-state-box">
+              <div class="pulse-radar"></div>
+              <h3>Room Ready</h3>
+              <p>Send the invite link to Player 2. The match will automatically begin length selection when they enter.</p>
+              <div class="invite-share-box">
+                <input type="text" id="share-link-input" class="form-input readonly-input" readonly />
+                <button id="copy-share-input-btn" class="btn btn-primary">COPY LINK</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 2: CHOOSE NUMBER LENGTH (STEP 1: SHOWN IMMEDIATELY UPON ENTERING GAME) -->
+          <div id="stage-length" class="stage-section">
+            <div class="stage-accordion-header" id="stage-length-header">
+              <div class="step-meta">
+                <span class="step-badge">STEP 1</span>
+                <h3>Choose Secret Number Length</h3>
+              </div>
+              <span class="step-summary-badge hidden" id="length-selected-summary"></span>
+            </div>
+            
+            <div class="stage-accordion-body" id="stage-length-body">
+              <p class="stage-instruction">You can choose independently. For example, if you pick 3 digits and opponent picks 5 digits, you will guess their 5 digits and they will guess your 3 digits.</p>
+              <div class="length-options-grid">
+                <button class="length-btn" data-length="3">
+                  <span class="length-num">3</span>
+                  <span class="length-label">DIGITS</span>
+                  <span class="length-desc">Fast & tactical</span>
+                </button>
+                <button class="length-btn" data-length="4">
+                  <span class="length-num">4</span>
+                  <span class="length-label">DIGITS</span>
+                  <span class="length-desc">Classic duel</span>
+                </button>
+                <button class="length-btn" data-length="5">
+                  <span class="length-num">5</span>
+                  <span class="length-label">DIGITS</span>
+                  <span class="length-desc">Master level</span>
+                </button>
+                <button class="length-btn" data-length="6">
+                  <span class="length-num">6</span>
+                  <span class="length-label">DIGITS</span>
+                  <span class="length-desc">Grandmaster</span>
+                </button>
+              </div>
+
+              <!-- Quick Invite Pill for Host While Waiting for Opponent -->
+              <div id="length-invite-prompt" class="length-invite-prompt">
+                <div class="invite-pill-row">
+                  <span class="invite-dot-pulse"></span>
+                  <span class="invite-msg">Invite a friend to duel:</span>
+                  <button id="quick-copy-invite-btn" class="btn btn-sm btn-outline quick-invite-btn">📋 Copy Invite Link</button>
+                </div>
+              </div>
+
+              <div id="length-waiting-note" class="waiting-note hidden">
+                <span>✓ Length selected! Waiting for opponent to select their length...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 3: INPUT SECRET NUMBER (STEP 2 ACCORDION) -->
+          <div id="stage-secret" class="stage-section hidden">
+            <div class="stage-accordion-header" id="stage-secret-header">
+              <div class="step-meta">
+                <span class="step-badge">STEP 2</span>
+                <h3>Lock In Your Secret Number</h3>
+              </div>
+            </div>
+
+            <div class="stage-accordion-body" id="stage-secret-body">
+              <!-- PIN ENTRY BOXES -->
+              <div id="secret-pin-boxes" class="pin-boxes-row"></div>
+
+              <!-- ON-SCREEN NUMPAD -->
+              <div class="numpad-collapsible-wrap" id="sec-numpad-secret">
+                <div class="keypad-grid">
+                  <button class="key-btn" data-key="1">1</button>
+                  <button class="key-btn" data-key="2">2</button>
+                  <button class="key-btn" data-key="3">3</button>
+                  <button class="key-btn" data-key="4">4</button>
+                  <button class="key-btn" data-key="5">5</button>
+                  <button class="key-btn" data-key="6">6</button>
+                  <button class="key-btn" data-key="7">7</button>
+                  <button class="key-btn" data-key="8">8</button>
+                  <button class="key-btn" data-key="9">9</button>
+                  <button class="key-btn key-action" id="secret-clear-btn">CLR</button>
+                  <button class="key-btn" data-key="0">0</button>
+                  <button class="key-btn key-action" id="secret-del-btn">⌫</button>
+                </div>
+              </div>
+
+              <div class="stage-actions">
+                <button id="submit-secret-btn" class="btn btn-primary btn-lg btn-block" disabled>
+                  LOCK IN SECRET NUMBER
+                </button>
+              </div>
+
+              <div id="secret-waiting-note" class="waiting-note hidden">
+                <span>🔒 Your secret is locked! Waiting for opponent to lock theirs...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 4: ACTIVE DUEL GUESSING (STEP 3) -->
+          <div id="stage-duel" class="stage-section hidden">
+            <!-- COMPACT TARGET SPEC ROW (Small to occupy less space) -->
+            <div class="duel-prompt-row">
+              <div class="prompt-info">
+                <span class="prompt-target">TARGET:</span>
+                <span id="target-spec-text" class="target-spec">Guess opponent's <strong id="target-length-count">5</strong>-digit number</span>
+              </div>
+              <div id="turn-indicator-badge" class="turn-indicator-badge turn-waiting">Waiting</div>
+            </div>
+
+            <!-- MIDDLE SPLIT: CHATTING AREA (LEFT) + GUESSING HISTORY (RIGHT) -->
+            <div class="duel-middle-split">
+              <!-- LEFT: CHATTING AREA -->
+              <div class="duel-panel duel-chat-panel" id="sec-chat">
+                <div class="panel-header chat-panel-header">
+                  <div class="panel-title-wrap">
+                    <span class="panel-icon">💬</span>
+                    <span class="panel-title">CHAT</span>
+                  </div>
+                  <span id="typing-indicator-text" class="typing-indicator"></span>
+                </div>
+
+                <!-- Chat Stream (newer appear in bottom, older vanish into top side) -->
+                <div id="chat-messages-container" class="chat-messages" tabindex="0" aria-label="Chat messages stream">
+                  <div class="system-chat-msg">Duel chat connected</div>
+                </div>
+
+                <!-- EMOJI PICKER POPOVER -->
+                <div id="emoji-picker" class="emoji-picker hidden" role="dialog" aria-label="Emoji picker">
+                  <div class="emoji-grid" id="emoji-grid"></div>
+                </div>
+
+                <!-- CHAT INPUT BAR -->
+                <form id="chat-form" class="chat-input-bar">
+                  <button type="button" id="emoji-toggle-btn" class="btn-icon emoji-btn" aria-label="Toggle emoji picker" title="Emojis">😀</button>
+                  <input type="text" id="chat-input" class="chat-input" placeholder="Type..." maxlength="300" autocomplete="off" />
+                  <button type="submit" id="chat-send-btn" class="btn-icon send-btn" aria-label="Send message">➤</button>
+                </form>
+              </div>
+
+              <!-- RIGHT: GUESSING HISTORY AREA -->
+              <div class="duel-panel duel-history-panel" id="sec-history">
+                <div class="panel-header history-panel-header">
+                  <div class="panel-title-wrap">
+                    <span class="panel-icon">📜</span>
+                    <span class="panel-title">MOVES</span>
+                  </div>
+                  <div class="history-tabs">
+                    <button id="tab-my-guesses" class="history-tab active" title="Your guesses">You (<span id="my-guess-count">0</span>)</button>
+                    <button id="tab-opp-guesses" class="history-tab" title="Opponent guesses">Opp (<span id="opp-guess-count">0</span>)</button>
+                  </div>
+                </div>
+
+                <!-- Guess History List (newer appear in bottom, older vanish into top side) -->
+                <div id="guess-list-container" class="guess-list" tabindex="0" aria-label="Guess History List">
+                  <div class="empty-history-text">No guesses yet</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DOWN / BOTTOM: PIN BOXES + REGULAR SIZE NUMPAD + SUBMIT GUESS -->
+            <div class="duel-bottom-controls">
+              <!-- GUESS DIGIT BOXES -->
+              <div id="guess-pin-boxes" class="pin-boxes-row guess-boxes"></div>
+
+              <!-- GUESS NUMPAD (Regular compact size) -->
+              <div class="numpad-collapsible-wrap" id="guess-keypad-wrap">
+                <div class="keypad-grid" id="guess-keypad">
+                  <button class="key-btn guess-key" data-key="1">1</button>
+                  <button class="key-btn guess-key" data-key="2">2</button>
+                  <button class="key-btn guess-key" data-key="3">3</button>
+                  <button class="key-btn guess-key" data-key="4">4</button>
+                  <button class="key-btn guess-key" data-key="5">5</button>
+                  <button class="key-btn guess-key" data-key="6">6</button>
+                  <button class="key-btn guess-key" data-key="7">7</button>
+                  <button class="key-btn guess-key" data-key="8">8</button>
+                  <button class="key-btn guess-key" data-key="9">9</button>
+                  <button class="key-btn key-action" id="guess-clear-btn">CLR</button>
+                  <button class="key-btn guess-key" data-key="0">0</button>
+                  <button class="key-btn key-action" id="guess-del-btn">⌫</button>
+                </div>
+              </div>
+
+              <div class="guess-submit-wrapper">
+                <button id="submit-guess-btn" class="btn btn-primary btn-block" disabled>
+                  SUBMIT GUESS
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 5: GAME WON / VICTORY OVERLAY -->
+          <div id="stage-victory" class="stage-section hidden">
+            <div class="victory-card">
+              <div class="victory-trophy">🏆</div>
+              <h2 id="victory-title" class="victory-title">VINAY WON!</h2>
+              <p id="victory-subtitle" class="victory-subtitle">Decoded the secret number with superior logic!</p>
+
+              <div class="victory-secrets-reveal">
+                <div class="reveal-box">
+                  <span class="reveal-label">Opponent's Secret Number:</span>
+                  <span id="revealed-opponent-secret" class="reveal-value">58321</span>
+                </div>
+                <div class="reveal-box">
+                  <span class="reveal-label">Total Turns Played:</span>
+                  <span id="revealed-turns-count" class="reveal-value">7</span>
+                </div>
+              </div>
+
+              <div class="victory-actions">
+                <button id="rematch-btn" class="btn btn-primary btn-lg">
+                  🔄 PLAY REMATCH
+                </button>
+                <button id="new-game-btn" class="btn btn-secondary btn-lg">
+                  ⚡ NEW ROOM
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+      </div> <!-- End phone-screen-body -->
+
+      <!-- INSTRUCTIONS OVERLAY (Shown after locking secret number, and accessible anytime via Rules button) -->
+      <div id="instructions-modal" class="instructions-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="instr-title">
+        <div class="instructions-card">
+          <div class="instructions-header">
+            <div class="instructions-title-wrap">
+              <span class="instructions-badge-icon">📖</span>
+              <div>
+                <h3 id="instr-title" class="instructions-title">Match Rules & Instructions</h3>
+                <p class="instructions-sub">How the number duel works</p>
+              </div>
+            </div>
+            <button id="close-instructions-btn" class="btn-icon instructions-close-btn" aria-label="Close Instructions">✕</button>
+          </div>
+
+          <div class="instructions-body">
+            <div class="rule-item">
+              <div class="rule-icon-box">🟢</div>
+              <div class="rule-text">
+                <strong>Exact Match (Bulls)</strong>
+                <p>A digit is present in your opponent's secret and in the <em>exact correct position</em>.</p>
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-icon-box">🟡</div>
+              <div class="rule-text">
+                <strong>Misplaced Match (Cows)</strong>
+                <p>A digit is present in their secret, but in a <em>different position</em>.</p>
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-icon-box">🔴</div>
+              <div class="rule-text">
+                <strong>Wrong Digit (Red Light / Miss)</strong>
+                <p>A digit is completely absent from the secret number.</p>
+              </div>
+            </div>
+
+            <div id="instructions-match-status" class="instructions-status-banner">
+              <span class="status-pulse-dot"></span>
+              <span id="instructions-status-text">🔒 Your secret is locked! Match will start once opponent is ready.</span>
+            </div>
+          </div>
+
+          <div class="instructions-actions">
+            <button id="dismiss-instructions-btn" class="btn btn-primary btn-block">
+              GOT IT, ENTER DUEL ⚔️
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phone Home Indicator Bar -->
+      <div class="phone-home-indicator"></div>
+    </div> <!-- End phone-frame -->
+  </div> <!-- End viewport-outer-container -->
+
+  <!-- Clock Script for Phone Status Bar -->
+  <script>
+    function updatePhoneClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const clockEl = document.getElementById('status-time-clock');
+      if (clockEl) clockEl.textContent = hours + ':' + minutes;
+    }
+    updatePhoneClock();
+    setInterval(updatePhoneClock, 10000);
+  </script>
+
+  <!-- Scripts -->
+  <script src="js/emoji.js?v=21"></script>
+  <script src="js/socket.js?v=21"></script>
+  <script src="js/webrtc.js?v=21"></script>
+  <script src="js/ui.js?v=21"></script>
+  <script src="js/app.js?v=21"></script>
+</body>
+</html>

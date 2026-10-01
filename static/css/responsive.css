@@ -1,0 +1,313 @@
+/* ==========================================================================
+   RESPONSIVE DESIGN BREAKPOINTS
+   Desktop: 3 columns (Left Players, Center Arena, Right History/Chat)
+   Tablet: 2 columns / Stacked
+   Mobile: 1 column clean stacked with quick tabs & touch keypad
+   ========================================================================== */
+
+/* Large Tablets & Medium Desktops (max-width: 1200px) */
+@media (max-width: 1200px) {
+  .game-layout {
+    grid-template-columns: 280px 1fr 300px;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .pin-box {
+    width: 50px;
+    height: 60px;
+    font-size: 1.7rem;
+  }
+}
+
+/* Tablets (max-width: 992px) */
+@media (max-width: 992px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+  }
+
+  .layout-column.column-left {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .vs-divider {
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+  }
+
+  .vs-line {
+    width: 1px;
+    height: 100%;
+  }
+
+  .media-dock-card, .secret-hud-card {
+    grid-column: 1 / -1;
+  }
+
+  .history-card {
+    height: 320px;
+  }
+
+  .chat-card {
+    height: 340px;
+  }
+}
+
+/* Mobile Devices (max-width: 768px) */
+@media (max-width: 768px) {
+  .app-header {
+    height: 48px;
+    padding: 6px 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .header-left {
+    width: auto;
+    gap: 6px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .header-right {
+    width: auto;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .adaptive-control-bar {
+    display: none !important;
+  }
+
+  .brand-logo { display: none !important; }
+  .copy-link-btn, .connection-badge { display: none !important; }
+
+  .game-layout {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px 28px 14px;
+    gap: 14px;
+  }
+
+  .layout-column.column-center {
+    order: 1 !important;
+    width: 100%;
+  }
+
+  .layout-column.column-left {
+    order: 2 !important;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .layout-column.column-right {
+    order: 3 !important;
+    width: 100%;
+  }
+
+  .mobile-duel-strip {
+    display: flex !important;
+  }
+
+  .vs-divider {
+    flex-direction: row;
+    height: auto;
+    padding: 2px 0;
+  }
+
+  .vs-line {
+    width: auto;
+    flex: 1;
+    height: 1px;
+  }
+
+  .arena-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .length-options-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .length-btn {
+    padding: 16px 8px;
+  }
+
+  .length-num { font-size: 2rem; }
+
+  .pin-boxes-row {
+    gap: 8px;
+    margin: 12px 0 16px;
+  }
+
+  .pin-box {
+    width: 44px;
+    height: 54px;
+    font-size: 1.5rem;
+  }
+
+  .keypad-grid {
+    gap: 8px;
+    max-width: 280px;
+  }
+
+  .key-btn {
+    height: 48px;
+    font-size: 1.25rem;
+  }
+
+  .stage-actions {
+    margin-top: 18px !important;
+    max-width: 280px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .lobby-card {
+    padding: 16px 12px;
+  }
+
+  .lobby-title {
+    font-size: 1.35rem;
+    line-height: 1.18;
+    margin-bottom: 6px;
+  }
+
+  .lobby-subtitle {
+    font-size: 0.74rem;
+    margin: 0 auto 10px;
+    max-width: 290px;
+  }
+
+  .lobby-actions-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .lobby-action-box {
+    padding: 10px 6px;
+  }
+
+  .lobby-invite-direct-box {
+    padding: 14px 10px;
+  }
+
+  .victory-title {
+    font-size: 2rem;
+  }
+
+  .victory-secrets-reveal {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .victory-actions {
+    flex-direction: column;
+  }
+
+  .emoji-picker {
+    width: 220px;
+    bottom: 45px;
+  }
+
+  /* Duel Screen Bottom Keypad & Middle Split */
+  .duel-bottom-controls .keypad-grid {
+    gap: 5px !important;
+    max-width: 240px !important;
+  }
+  .duel-bottom-controls .key-btn {
+    height: 38px !important;
+    font-size: 1.18rem !important;
+  }
+  .duel-bottom-controls .pin-box {
+    width: 36px !important;
+    height: 40px !important;
+    font-size: 1.25rem !important;
+  }
+  .duel-bottom-controls #submit-guess-btn {
+    height: 38px !important;
+    max-width: 240px !important;
+  }
+  .duel-middle-split {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+}
+
+/* Small Screens (max-width: 420px) */
+@media (max-width: 420px) {
+  .pin-box {
+    width: 38px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+
+  .key-btn {
+    height: 44px;
+    font-size: 1.15rem;
+  }
+
+  .guess-val {
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+  }
+
+  .result-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+
+  .step-meta {
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+  }
+
+  .step-meta h3 {
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+  }
+
+  .step-badge {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+  }
+}
+
+/* Mobile Native Viewport Overrides (max-width: 480px) */
+@media (max-width: 480px) {
+  .viewport-outer-container {
+    padding: 0 !important;
+  }
+  .viewport-control-bar {
+    display: none !important;
+  }
+  .phone-frame {
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    aspect-ratio: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .phone-notch-bar {
+    display: none !important;
+  }
+}
+
